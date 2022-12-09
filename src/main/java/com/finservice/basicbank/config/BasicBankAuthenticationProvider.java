@@ -1,5 +1,6 @@
 package com.finservice.basicbank.config;
 
+import com.finservice.basicbank.model.domain.Authority;
 import com.finservice.basicbank.model.domain.Customer;
 import com.finservice.basicbank.repository.jpa.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class BasicBankAuthenticationProvider implements AuthenticationProvider {
@@ -33,15 +35,22 @@ public class BasicBankAuthenticationProvider implements AuthenticationProvider {
 
         if (customer.size() > 0) {
             if (encoder.matches(pwd, customer.get(0).getPassword())) {
-                List<GrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority(customer.get(0).getRole()));
-                return new UsernamePasswordAuthenticationToken(username, pwd, authorities);
+                return new UsernamePasswordAuthenticationToken(username, pwd,
+                        getGrantedAuthorities(customer.get(0).getAuthorities()));
             } else {
                 throw new BadCredentialsException("Wrong password");
             }
         } else {
             throw new BadCredentialsException("No user with this details");
         }
+    }
+
+    private List<GrantedAuthority> getGrantedAuthorities(Set<Authority> authorities) {
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        for (Authority authority : authorities) {
+            grantedAuthorities.add(new SimpleGrantedAuthority(authority.getName()));
+        }
+        return grantedAuthorities;
     }
 
     @Override

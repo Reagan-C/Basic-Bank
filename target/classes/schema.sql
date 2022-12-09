@@ -91,6 +91,14 @@ create TABLE IF NOT EXISTS `contact_messages`  (
 primary key (`contact_id`)
 );
 
+create TABLE IF NOT EXISTS `authorities`  (
+`id` INT NOT NULL auto_increment,
+`customer_id` int not null ,
+`name` varchar(50) not null ,
+primary key (`id`),
+KEY `customer_id`(`customer_id`),
+CONSTRAINT `authorities_idfk_1` FOREIGN KEY(`customer_id`) REFERENCES `customer`(`customer_id`)
+);
 
 --INSERT INTO `customer`(`name`, `email`, `mobile_number`,`pwd`, `role`, `created_on`)
 -- values ('olive', 'olive@gmail.com', '9037163552', '$2a$12$IyTohCLMT12y.ozLRXA2LODMyAUs7wJgqAfHsjq6Q.KUlPzScYQ3S', 'admin', CURRENT_DATE);
