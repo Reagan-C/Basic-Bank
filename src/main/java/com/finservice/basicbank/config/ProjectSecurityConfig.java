@@ -34,7 +34,11 @@ public class ProjectSecurityConfig {
                 .and().csrf().ignoringRequestMatchers("/contact", "/register")
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .and().authorizeHttpRequests()
-                .requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCards", "/user").authenticated()
+                .requestMatchers("/myAccount").hasRole("USER")
+                .requestMatchers("/myBalance").hasAnyRole("ADMIN", "USER")
+                .requestMatchers("/myLoans").hasRole("USER")
+                .requestMatchers("/myCards").hasRole("USER")
+                .requestMatchers("/user").authenticated()
                 .requestMatchers("/notices", "/contact", "/register").permitAll()
                 .and().formLogin()
                 .and().httpBasic();
