@@ -1,22 +1,33 @@
 package com.finservice.basicbank.config;
 
+import com.finservice.basicbank.filter.JWTTokenGeneratorFilter;
+import com.finservice.basicbank.filter.JWTTokenValidatorFilter;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 
 @Configuration
 public class ProjectSecurityConfig {
 
+    @Autowired
+    private JWTTokenGeneratorFilter tokenGeneratorFilter;
+
+    @Autowired
+    private JWTTokenValidatorFilter tokenValidatorFilter;
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.cors().configurationSource(new CorsConfigurationSource() {
@@ -27,13 +38,16 @@ public class ProjectSecurityConfig {
                         corsconfig.setAllowedMethods(Collections.singletonList("*"));
                         corsconfig.setAllowCredentials(true);
                         corsconfig.setAllowedHeaders(Collections.singletonList("*"));
+                        corsconfig.setExposedHeaders(Arrays.asList("Authorization"));
                         corsconfig.setMaxAge(3600L);
                         return corsconfig;
                     }
                 })
                 .and().csrf().ignoringRequestMatchers("/contact", "/register")
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .and().authorizeHttpRequests()
+                .and().addFilterAfter(tokenGeneratorFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(tokenValidatorFilter, BasicAuthenticationFilter.class)
+                .authorizeHttpRequests()
                 .requestMatchers("/myAccount").hasRole("USER")
                 .requestMatchers("/myBalance").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/myLoans").hasRole("USER")
@@ -41,7 +55,9 @@ public class ProjectSecurityConfig {
                 .requestMatchers("/user").authenticated()
                 .requestMatchers("/notices", "/contact", "/register").permitAll()
                 .and().formLogin()
-                .and().httpBasic();
+                .and().httpBasic()
+                .and().sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         return http.build();
     }
 
@@ -49,27 +65,4 @@ public class ProjectSecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
-
-//    @Bean
-//    public InMemoryUserDetailsManager userDetailsService() {
-//        UserDetails admin = User.builder()
-//                .username("admin")
-//                .password("12345")
-//                .authorities("admin")
-//                .build();
-//        UserDetails user = User.builder()
-//                .username("user")
-//                .password("12345")
-//                .authorities("read")
-//                .build();
-//        return new InMemoryUserDetailsManager(admin,user);
-//    }
-
-
-//    @Bean
-//    public UserDetailsService userDetailsService(DataSource dataSource) {
-//        return new JdbcUserDetailsManager(dataSource);
-//    }
 }
